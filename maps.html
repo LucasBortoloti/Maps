@@ -17,7 +17,8 @@
         }
 
         #map {
-            height: 650px;
+            height: 450px;
+            width: 650px;
         }
     </style>
 </head>
@@ -26,27 +27,38 @@
     <div id="map"></div>
     <script>
 
-        var map = L.map('map')
-        map.setView([-26.5048433, -49.0933284], 20);
+        var map = L.map('map');
+        map.setView([-26.5046581, -49.0906601], 20);
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
+        var initialLocation = [-26.5046581, -49.0906601];
+        var currentMarker = L.marker(initialLocation, {
+            title: "Prefeitura",
+        })
+            .addTo(map);
 
-        navigator.geolocation.watchPosition(sucess, error);
+        var circleRadius = 25;
+        var circle = L.circle(initialLocation, circleRadius, {
+            color: 'blue',
+            fillColor: 'lightblue',
+            fillOpacity: 0.5
+        })
+            .addTo(map);
 
-        function success(pos) {
+        function addMarker(e) {
+            var clickedLocation = e.latlng;
 
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            const accuracy = pos.coords.accuracy;
+            currentMarker.setLatLng(clickedLocation);
+            currentMarker.setTitle("Marcador");
 
-            L.marker([lat, lng]).addTo(map);
-            L.circle([lat, lng], { radius: accuracy }).addTo(map);
-
+            circle.setLatLng(clickedLocation);
         }
+
+        map.on('click', addMarker);
 
     </script>
 </body>
