@@ -10,6 +10,10 @@
         integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
         integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+    <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+    <script src='//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-image/v0.0.4/leaflet-image.js'></script>
+
     <style>
         body {
             margin: 0;
@@ -20,13 +24,28 @@
             height: 450px;
             width: 650px;
         }
+
+        button {
+            background-color: #0051ffee;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 10px 2px;
+            cursor: pointer;
+            border-radius: 10px;
+        }
     </style>
 </head>
 
 <body>
     <div id="map"></div>
-    <script>
+    <button onclick="saveMapAsImage()">Salvar Mapa</button>
 
+    <script>
         var map = L.map('map');
         map.setView([-26.5046581, -49.0906601], 20);
 
@@ -41,24 +60,43 @@
         })
             .addTo(map);
 
-        var circleRadius = 25;
+        /*var circleRadius = 25;
         var circle = L.circle(initialLocation, circleRadius, {
             color: 'blue',
             fillColor: 'lightblue',
             fillOpacity: 0.5
         })
             .addTo(map);
+        */
 
         function addMarker(e) {
             var clickedLocation = e.latlng;
 
             currentMarker.setLatLng(clickedLocation);
-            currentMarker.setTitle("Marcador");
 
             circle.setLatLng(clickedLocation);
         }
 
         map.on('click', addMarker);
+
+
+        function saveMapAsImage() {
+            var mapContainer = document.getElementById('map');
+            console.log('Iniciou a captura da div para imagem')
+            html2canvas(mapContainer, {
+                useCORS: true,
+                allowTaint: true
+            }).then(canvas => {
+                var imageData = canvas.toDataURL("image/png");
+
+                var link = document.createElement('a');
+                link.href = imageData;
+                link.download = "my_map.png";
+                link.click();
+
+                document.body.appendChild(canvas)
+            });
+        }
 
     </script>
 </body>
