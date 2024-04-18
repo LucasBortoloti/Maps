@@ -6,13 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maps</title>
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
-        integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
-    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-        integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v8.2.0/ol.css">
+    <script src="https://cdn.jsdelivr.net/npm/ol@v8.2.0/dist/ol.js"></script>
     <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
-    <script src='//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-image/v0.0.4/leaflet-image.js'></script>
 
     <style>
         body {
@@ -46,58 +42,82 @@
     <button onclick="saveMapAsImage()">Salvar Mapa</button>
 
     <script>
-        var map = L.map('map');
-        map.setView([-26.5046581, -49.0906601], 20);
+        const map = new ol.Map({
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM(),
+                })
+            ],
+            target: 'map',
+            view: new ol.View({
+                center: ol.proj.fromLonLat([-49.0906601, -26.5046581]),
+                zoom: 18, // Defina o nível de zoom padrão aqui
+            })
+        });
 
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
+        var markerLayer = new ol.layer.Vector({
+            source: new ol.source.Vector(),
+        });
 
-        var initialLocation = [-26.5046581, -49.0906601];
-        var currentMarker = L.marker(initialLocation, {
-            title: "Prefeitura",
-        })
-            .addTo(map);
+        map.addLayer(markerLayer);
 
-        /*var circleRadius = 25;
-        var circle = L.circle(initialLocation, circleRadius, {
-            color: 'blue',
-            fillColor: 'lightblue',
-            fillOpacity: 0.5
-        })
-            .addTo(map);
-        */
+        var marker;
 
         function addMarker(e) {
-            var clickedLocation = e.latlng;
+            var clickedCoordinate = e.coordinate;
 
-            currentMarker.setLatLng(clickedLocation);
+            // Remover o marcador existente
+            if (marker) {
+                markerLayer.getSource().removeFeature(marker);
+            }
 
-            circle.setLatLng(clickedLocation);
+            marker = new ol.Feature({
+                geometry: new ol.geom.Point(clickedCoordinate),
+            });
+
+            // var markerStyle = new ol.style.Style({
+            //     // Use a circle symbol for a simpler marker
+            //     image: new ol.style.Circle({
+            //         radius: 7, // Adjust radius for desired size
+            //         fill: new ol.style.Fill({
+            //             color: 'red' // Change color as needed
+            //         })
+            //     })
+            // });
+
+            var markerStyle = new ol.style.Style({
+                image: new ol.style.Icon({
+                    src: 'google-309739_1280.webp', // URL to image file
+                    width: 20
+                    // or use Data URI
+                    // src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C9B0...'
+                })
+            });
+
+            marker.setStyle(markerStyle);
+
+            markerLayer.getSource().addFeature(marker);
         }
 
         map.on('click', addMarker);
 
-
-        function saveMapAsImage() {
+        async function saveMapAsImage() {
             var mapContainer = document.getElementById('map');
-            console.log('Iniciou a captura da div para imagem')
-            html2canvas(mapContainer, {
+            console.log('Iniciou a captura da div para imagem');
+            await html2canvas(mapContainer, {
                 useCORS: true,
-                allowTaint: true
+                allowTaint: true,
             }).then(canvas => {
+                console.log(canvas)
+                document.body.appendChild(canvas);
                 var imageData = canvas.toDataURL("image/png");
 
                 var link = document.createElement('a');
                 link.href = imageData;
-                link.download = "my_map.png";
+                link.download = "mapa.png";
                 link.click();
-
-                document.body.appendChild(canvas)
             });
         }
-
     </script>
 </body>
 
