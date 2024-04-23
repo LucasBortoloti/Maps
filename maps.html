@@ -16,8 +16,8 @@
         }
 
         #map {
-            height: 450px;
-            width: 650px;
+            height: 500px;
+            width: 700px;
         }
 
         button {
@@ -118,6 +118,28 @@
         markerLayer.getSource().addFeature(marker);
         map.addLayer(markerLayer);
 
+        var markerCoordinate = marker.getGeometry().getCoordinates();
+        var radius = 80; // Defina o raio em metros conforme necessário
+        var circle = new ol.Feature({
+            geometry: new ol.geom.Circle(markerCoordinate, radius)
+        });
+
+        var circleStyle = new ol.style.Style({
+            stroke: new ol.style.Stroke({
+                color: 'blue',
+                width: 2
+            }),
+            fill: new ol.style.Fill({
+                color: 'rgba(0, 0, 255, 0.1)'
+            })
+        });
+
+        circle.setStyle(circleStyle);
+
+        // Adicionar o círculo à camada do raio antes de adicionar a camada ao mapa
+        circleLayer.getSource().addFeature(circle);
+        map.addLayer(circleLayer);
+
         // O listener de evento de clique permanece para adicionar marcadores adicionais
         map.on('click', addMarker);
 
@@ -168,7 +190,7 @@
             let json = JSON.parse(responseText);
 
             if (json.status === 'ok') {
-                porcentagem.innerHTML = '<img id="previewImage" src="' + json.img + '" width="600">';
+                porcentagem.innerHTML = '<img id="previewImage" src="' + json.img + '" width="700">';
             } else {
                 preview.innerHTML = 'Erro ao salvar: ' + json.error;
             }
