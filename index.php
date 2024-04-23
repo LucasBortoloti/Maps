@@ -11,7 +11,7 @@ $options->setIsRemoteEnabled(true);
 
 $dompdf = new Dompdf($options);
 
-$dompdf->loadHtmlFile(__DIR__ . '/maps.html');
+$dompdf->loadHtmlFile(__DIR__ . '/mappdf.html');
 
 $dompdf->render();
 

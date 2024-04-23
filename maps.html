@@ -1,15 +1,14 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maps</title>
+    <title>Inserir Imagem no Input File com JavaScript</title>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v8.2.0/ol.css">
     <script src="https://cdn.jsdelivr.net/npm/ol@v8.2.0/dist/ol.js"></script>
     <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
     <style>
         body {
             margin: 0;
@@ -39,9 +38,47 @@
 
 <body>
     <div id="map"></div>
-    <button onclick="saveMapAsImage()">Salvar Mapa</button>
+
+    <form id="uploadForm" method="post" enctype="multipart/form-data">
+        <input type="hidden" id="imageData" name="imageData">
+        <input type="hidden" name="fileInput" id="fileInput">
+        <button type="submit">Salvar Mapa</button>
+    </form>
+
+    <div id="preview"></div>
+    <div id="porcento"></div>
 
     <script>
+
+        var preview = document.getElementById('preview');
+        var porcentagem = document.getElementById("porcento");
+        var imageData = document.getElementById("imageData");
+        var formUpload = document.getElementById('uploadForm');
+
+
+        function selectImage(img) {
+            const fileInput = document.getElementById('fileInput');
+
+            // Cria um novo objeto FileList contendo a imagem
+            const file = new File([''], img, { type: 'image/png' });
+            const fileList = new DataTransfer();
+            fileList.items.add(file);
+
+            // Define a nova FileList no input file
+            fileInput.files = fileList.files;
+
+            // Mostra a imagem selecionada no preview
+            fileInput.addEventListener('change', function () {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    //   previewImage.src = e.target.result;
+                    //   previewImage.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
         const map = new ol.Map({
             layers: [
                 new ol.layer.Tile({
@@ -50,8 +87,8 @@
             ],
             target: 'map',
             view: new ol.View({
-                center: ol.proj.fromLonLat([-49.0906601, -26.5046581]),
-                zoom: 18, // Defina o nível de zoom padrão aqui
+                center: ol.proj.fromLonLat([-49.089542, -26.504019]), // Coordenadas iniciais do centro
+                zoom: 18 // Nível de zoom inicial
             })
         });
 
@@ -59,66 +96,91 @@
             source: new ol.source.Vector(),
         });
 
+        var circleLayer = new ol.layer.Vector({
+            source: new ol.source.Vector(),
+        });
+
+        // Criar o objeto do marcador com coordenadas iniciais
+        var marker = new ol.Feature({
+            geometry: new ol.geom.Point(ol.proj.fromLonLat([-49.089542, -26.504019])), // Mesmas coordenadas do centro
+        });
+
+        var markerStyle = new ol.style.Style({
+            image: new ol.style.Icon({
+                src: 'marcador.webp', // URL para o arquivo de imagem
+                width: 23
+            })
+        });
+
+        marker.setStyle(markerStyle);
+
+        // Adicionar o marcador à camada antes de adicionar a camada ao mapa
+        markerLayer.getSource().addFeature(marker);
         map.addLayer(markerLayer);
 
-        var marker;
+        // O listener de evento de clique permanece para adicionar marcadores adicionais
+        map.on('click', addMarker);
 
         function addMarker(e) {
             var clickedCoordinate = e.coordinate;
-
-            // Remover o marcador existente
-            if (marker) {
-                markerLayer.getSource().removeFeature(marker);
-            }
-
-            marker = new ol.Feature({
-                geometry: new ol.geom.Point(clickedCoordinate),
-            });
-
-            // var markerStyle = new ol.style.Style({
-            //     // Use a circle symbol for a simpler marker
-            //     image: new ol.style.Circle({
-            //         radius: 7, // Adjust radius for desired size
-            //         fill: new ol.style.Fill({
-            //             color: 'red' // Change color as needed
-            //         })
-            //     })
-            // });
-
-            var markerStyle = new ol.style.Style({
-                image: new ol.style.Icon({
-                    src: 'google-309739_1280.webp', // URL to image file
-                    width: 20
-                    // or use Data URI
-                    // src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C9B0...'
-                })
-            });
-
-            marker.setStyle(markerStyle);
-
-            markerLayer.getSource().addFeature(marker);
         }
 
-        map.on('click', addMarker);
-
-        async function saveMapAsImage() {
+        async function captureAndSendMap() {
             var mapContainer = document.getElementById('map');
             console.log('Iniciou a captura da div para imagem');
             await html2canvas(mapContainer, {
                 useCORS: true,
                 allowTaint: true,
             }).then(canvas => {
-                console.log(canvas)
-                document.body.appendChild(canvas);
-                var imageData = canvas.toDataURL("image/png");
-
-                var link = document.createElement('a');
-                link.href = imageData;
-                link.download = "mapa.png";
-                link.click();
+                const imageData2 = canvas.toDataURL("image/png").replace('data:image/png;base64,', '');
+                let img = document.createElement("img");
+                img.src = imageData2
+                imageData.value = imageData2;
+                document.body.appendChild(img)
+                canv = canvas
+                uploadFile(canvas, handleResponse); // Pass callback function
             });
         }
+
+        async function uploadFile(file2, callback) {
+            let img = document.createElement('img');
+            img.src = file2.toDataURL('image/png');
+            selectImage(img.src);
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "upload.php");
+
+            xhr.upload.addEventListener('onprogress', function (e) {
+                var perc = (e.loaded / e.total);
+                porcentagem.innerHTML = perc;
+            });
+
+            var formData = new FormData(formUpload);
+            formData.append("i", 1);
+            await xhr.send(formData);
+
+            xhr.addEventListener('load', function () {
+                callback(xhr.responseText); // Call callback with response
+            });
+        }
+
+        function handleResponse(responseText) {
+            let json = JSON.parse(responseText);
+
+            if (json.status === 'ok') {
+                porcentagem.innerHTML = '<img id="previewImage" src="' + json.img + '" width="600">';
+            } else {
+                preview.innerHTML = 'Erro ao salvar: ' + json.error;
+            }
+        }
+
+        formUpload.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            captureAndSendMap();
+        })
+
     </script>
+
 </body>
 
 </html>
